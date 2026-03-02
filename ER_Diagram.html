@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Semarchy XDM — ER Diagram</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0d0f14;
+    --surface: #13161e;
+    --border: #1e2330;
+    --border-bright: #2a3045;
+    --text: #c8d0e0;
+    --text-dim: #5a6480;
+    --text-bright: #e8edf8;
+    --golden: #f0a843;
+    --id-matched: #5b9cf6;
+    --basic: #4ec994;
+    --reference: #b06ef3;
+    --pk: #f0a843;
+    --fk: #5b9cf6;
+    --accent: #f0a843;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    font-family: 'IBM Plex Sans', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: auto;
+  }
+
+  header {
+    padding: 28px 40px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  header h1 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-bright);
+  }
+
+  header span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+  }
+
+  .legend {
+    display: flex;
+    gap: 24px;
+    padding: 14px 40px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+  }
+
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+
+  .legend-line {
+    width: 20px; height: 2px;
+  }
+
+  .canvas {
+    position: relative;
+    width: 1400px;
+    height: 920px;
+    margin: 0 auto;
+  }
+
+  svg.lines {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+
+  .entity {
+    position: absolute;
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    border-radius: 6px;
+    width: 200px;
+    overflow: hidden;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    transition: border-color 0.2s;
+  }
+
+  .entity:hover {
+    border-color: var(--accent);
+    z-index: 10;
+  }
+
+  .entity-header {
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-bright);
+  }
+
+  .entity-name {
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: var(--text-bright);
+  }
+
+  .entity-type {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+
+  .type-golden { background: rgba(240,168,67,0.15); color: var(--golden); border: 1px solid rgba(240,168,67,0.3); }
+  .type-id-matched { background: rgba(91,156,246,0.15); color: var(--id-matched); border: 1px solid rgba(91,156,246,0.3); }
+  .type-basic { background: rgba(78,201,148,0.15); color: var(--basic); border: 1px solid rgba(78,201,148,0.3); }
+  .type-fuzzy { background: rgba(240,168,67,0.15); color: var(--golden); border: 1px solid rgba(240,168,67,0.3); }
+  .type-reference { background: rgba(176,110,243,0.15); color: var(--reference); border: 1px solid rgba(176,110,243,0.3); }
+
+  .entity-attrs {
+    padding: 6px 0;
+  }
+
+  .attr-row {
+    padding: 3px 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    color: var(--text-dim);
+    border-bottom: 1px solid rgba(30,35,48,0.5);
+  }
+
+  .attr-row:last-child { border-bottom: none; }
+
+  .attr-row.pk { color: var(--pk); font-weight: 500; }
+  .attr-row.fk { color: var(--fk); }
+  .attr-row.normal { color: var(--text-dim); }
+
+  .attr-badge {
+    font-size: 8px;
+    padding: 1px 4px;
+    border-radius: 2px;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .badge-pk { background: rgba(240,168,67,0.2); color: var(--pk); }
+  .badge-fk { background: rgba(91,156,246,0.2); color: var(--fk); }
+  .badge-lov { background: rgba(176,110,243,0.2); color: var(--reference); }
+
+  .attr-name { flex: 1; }
+
+  /* relationship lines */
+  line.rel {
+    stroke: var(--border-bright);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 3;
+  }
+
+  line.rel-solid {
+    stroke: rgba(240,168,67,0.3);
+    stroke-width: 1.5;
+  }
+
+  .rel-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    fill: var(--text-dim);
+    letter-spacing: 0.05em;
+  }
+
+  .survivorship-note {
+    position: absolute;
+    background: rgba(240,168,67,0.05);
+    border: 1px solid rgba(240,168,67,0.2);
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: rgba(240,168,67,0.7);
+    line-height: 1.5;
+    letter-spacing: 0.03em;
+    max-width: 180px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Semarchy XDM — Entity Relationship Model</h1>
+  <span>US Logistics Domain · 8 Entities</span>
+</header>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--golden)"></div> Fuzzy</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--id-matched)"></div> ID-Matched</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--basic)"></div> Basic</div>
+  <div class="legend-item" style="margin-left:16px"><div class="legend-line" style="background:var(--pk)"></div> PK — Primary Key</div>
+  <div class="legend-item"><div class="legend-line" style="background:var(--fk)"></div> FK — Foreign Key</div>
+  <div class="legend-item"><div class="legend-line" style="background:var(--border-bright); border-top: 1px dashed var(--border-bright)"></div> Relationship</div>
+</div>
+
+<div class="canvas" id="canvas">
+
+  <!-- SVG Lines -->
+  <svg class="lines" id="svg-lines"></svg>
+
+  <!-- US_Address -->
+  <div class="entity" id="e-address" style="left:40px; top:60px;">
+    <div class="entity-header">
+      <span class="entity-name">US_Address</span>
+      <span class="entity-type type-basic">Basic</span>
+    </div>
+    <div class="entity-attrs">
+      <div class="attr-row pk"><span class="attr-badge badge-pk">PK</span><span class="attr-name">Address_ID</span></div>
+      <div class="attr-row normal"><span class="attr-name">Address_Line1</span></div>
+      <div class="attr-row normal"><span class="attr-name">City</span></div>
+      <div class="attr-row normal"><span class="attr-name">State</span></div>
+      <div class="attr-row normal"><span class="attr-name">Country</span></div>
+      <div class="attr-row normal"><span class="attr-name">Postal_Code</span></div>
+    </div>
+  </div>
+
+  <!-- US_Customer -->
+  <div class="entity" id="e-customer" style="left:40px; top:320px;">
+    <div class="entity-header">
+      <span class="entity-name">US_Customer</span>
+      <span class="entity-type type-fuzzy">Fuzzy</span>
+    </div>
+    <div class="entity-attrs">
+      <div class="attr-row pk"><span class="attr-badge badge-pk">PK</span><span class="attr-name">Customer_ID</span></div>
+      <div class="attr-row normal"><span class="attr-name">Customer_Name</span></div>
+      <div class="attr-row normal"><span class="attr-name">Customer_Type</span><span class="attr-badge badge-lov">LOV</span></div>
+      <div class="attr-row normal"><span class="attr-name">Mobile</span></div>
+      <div class="attr-row normal"><span class="attr-name">Email</span></div>
+      <div class="attr-row fk"><span class="attr-badge badge-fk">FK</span><span class="attr-name">Address_ID</span></div>
+    </div>
+  </div>
+
+  <!-- US_Warehouse -->
+  <div class="entity" id="e-warehouse" style="left:310px; top:60px;">
+    <div class="entity-header">
+      <span class="entity-name">US_Warehouse</span>
+      <span class="entity-type type-basic">Basic</span>
+    </div>
+    <div class="entity-attrs">
+      <div class="attr-row pk"><span class="attr-badge badge-pk">PK</span><span class="attr-name">Warehouse_ID</span></div>
+      <div class="attr-row normal"><span class="attr-name">Warehouse_Name</span></div>
+      <div class="attr-row normal"><span class="attr-name">City</span></div>
+      <div class="attr-row normal"><span class="attr-name">State</span></div>
+      <div class="attr-row normal"><span class="attr-name">Country</span></div>
+    </div>
+  </div>
+
+  <!-- US_Supplier -->
+  <div class="entity" id="e-supplier" style="left:580px; top:600px;">
+    <div class="entity-header">
+      <span class="entity-name">US_Supplier</span>
+      <span class="entity-type type-fuzzy">Fuzzy</span>
+    </div>
+    <div class="entity-attrs">
+      <div class="attr-row pk"><span class="attr-badge badge-pk">PK</span><span class="attr-name">Supplier_ID</span></div>
+      <div class="attr-row normal"><span class="attr-name">Supplier_Name</span></div>
+      <div class="attr-row normal"><span class="attr-name">City</span></div>
+      <div class="attr-row normal"><span class="attr-name">State</span></div>
+      <div class="attr-row normal"><span class="attr-name">Country</span></div>
+    </div>
+  </div>
+
+  <!-- US_Product -->
+  <div class="entity" id="e-product" style="left:580px; top:330px;">
+    <div class="entity-header">
+      <span class="entity-name">US_Product</span>
+      <span class="entity-type type-fuzzy">Fuzzy</span>
+    </div>
+    <div class="entity-attrs">
+      <div class="attr-row pk"><span class="attr-badge badge-pk">PK</span><span class="attr-name">Product_ID</span></div>
+      <div class="attr-row normal"><span class="attr-name">Category</span></div>
+      <div class="attr-row normal"><span class="attr-name">Sub_Category</span></div>
+      <div class="attr-row normal"><span class="attr-name">Brand</span></div>
+      <div class="attr-row normal"><span class="attr-name">Product_Name</span></div>
+      <div class="attr-row fk"><span class="attr-badge badge-fk">FK</span><span class="attr-name">Supplier_ID</span></div>
+      <div class="attr-row normal"><span class="attr-name">Status</span><span class="attr-badge badge-lov">LOV</span></div>
+      <div class="attr-row normal"><span class="attr-name">Hazard_Class</span><span class="attr-badge badge-lov">LOV</span></div>
+    </div>
+  </div>
+
+  <!-- US_Inventory -->
+  <div class="entity" id="e-inventory" style="left:310px; top:380px;">
+    <div class="entity-header">
+      <span class="entity-name">US_Inventory</span>
+      <span class="entity-type type-id-matched">ID-Match</span>
+    </div>
+    <div class="entity-attrs">
+      <div class="attr-row pk"><span class="attr-badge badge-pk">PK</span><span class="attr-name">Inventory_ID</span></div>
+      <div class="attr-row fk"><span class="attr-badge badge-fk">FK</span><span class="attr-name">Product_ID</span></div>
+      <div class="attr-row fk"><span class="attr-badge badge-fk">FK</span><span class="attr-name">Warehouse_ID</span></div>
+      <div class="attr-row normal"><span class="attr-name">Quantity</span></div>
+    </div>
+  </div>
+
+  <!-- US_Sales_Order -->
+  <div class="entity" id="e-salesorder" style="left:860px; top:200px;">
+    <div class="entity-header">
+      <span class="entity-name">US_Sales_Order</span>
+      <span class="entity-type type-fuzzy">Fuzzy</span>
+    </div>
+    <div class="entity-attrs">
+      <div class="attr-row pk"><span class="attr-badge badge-pk">PK</span><span class="attr-name">Order_ID</span></div>
+      <div class="attr-row fk"><span class="attr-badge badge-fk">FK</span><span class="attr-name">Customer_ID</span></div>
+      <div class="attr-row normal"><span class="attr-name">Order_Date</span></div>
+      <div class="attr-row fk"><span class="attr-badge badge-fk">FK</span><span class="attr-name">Warehouse_ID</span></div>
+    </div>
+  </div>
+
+  <!-- US_Sales_Order_Line -->
+  <div class="entity" id="e-orderline" style="left:1130px; top:200px;">
+    <div class="entity-header">
+      <span class="entity-name">US_Sales_Order_Line</span>
+      <span class="entity-type type-basic">Basic</span>
+    </div>
+    <div class="entity-attrs">
+      <div class="attr-row pk"><span class="attr-badge badge-pk">PK</span><span class="attr-name">Order_Line_ID</span></div>
+      <div class="attr-row fk"><span class="attr-badge badge-fk">FK</span><span class="attr-name">Order_ID</span></div>
+      <div class="attr-row fk"><span class="attr-badge badge-fk">FK</span><span class="attr-name">Product_ID</span></div>
+      <div class="attr-row normal"><span class="attr-name">Quantity</span></div>
+    </div>
+  </div>
+
+
+
+</div>
+
+<script>
+  // Draw relationship lines between entities
+  function getCenter(el) {
+    const rect = el.getBoundingClientRect();
+    const canvas = document.getElementById('canvas').getBoundingClientRect();
+    return {
+      x: rect.left - canvas.left + rect.width / 2,
+      y: rect.top - canvas.top + rect.height / 2,
+      top: rect.top - canvas.top,
+      bottom: rect.bottom - canvas.top,
+      left: rect.left - canvas.left,
+      right: rect.right - canvas.left,
+      w: rect.width,
+      h: rect.height
+    };
+  }
+
+  function drawLine(svg, x1, y1, x2, y2, dashed, label) {
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+    line.setAttribute('class', dashed ? 'rel' : 'rel-solid');
+    svg.appendChild(line);
+
+    if (label) {
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', (x1 + x2) / 2 + 4);
+      text.setAttribute('y', (y1 + y2) / 2 - 4);
+      text.setAttribute('class', 'rel-label');
+      text.textContent = label;
+      svg.appendChild(text);
+    }
+  }
+
+  function connectEntities(svg, fromId, toId, label) {
+    const from = getCenter(document.getElementById(fromId));
+    const to = getCenter(document.getElementById(toId));
+
+    // Pick best edge connection points
+    let x1, y1, x2, y2;
+
+    if (Math.abs(from.x - to.x) > Math.abs(from.y - to.y)) {
+      // horizontal dominant
+      if (from.x < to.x) { x1 = from.right; x2 = to.left; }
+      else { x1 = from.left; x2 = to.right; }
+      y1 = from.y; y2 = to.y;
+    } else {
+      // vertical dominant
+      if (from.y < to.y) { y1 = from.bottom; y2 = to.top; }
+      else { y1 = from.top; y2 = to.bottom; }
+      x1 = from.x; x2 = to.x;
+    }
+
+    drawLine(svg, x1, y1, x2, y2, true, label);
+  }
+
+  window.addEventListener('load', () => {
+    const svg = document.getElementById('svg-lines');
+
+    // Address → Customer (1:N)
+    connectEntities(svg, 'e-address', 'e-customer', '1:N');
+    // Customer → SalesOrder (1:N)
+    connectEntities(svg, 'e-customer', 'e-salesorder', '1:N');
+    // Warehouse → SalesOrder (1:N)
+    connectEntities(svg, 'e-warehouse', 'e-salesorder', '1:N');
+    // Warehouse → Inventory (1:N)
+    connectEntities(svg, 'e-warehouse', 'e-inventory', '1:N');
+    // Product → Inventory (1:N)
+    connectEntities(svg, 'e-product', 'e-inventory', '1:N');
+    // Supplier → Product (1:N)
+    connectEntities(svg, 'e-supplier', 'e-product', '1:N');
+    // SalesOrder → OrderLine (1:N)
+    connectEntities(svg, 'e-salesorder', 'e-orderline', '1:N');
+    // Product → OrderLine (1:N)
+    connectEntities(svg, 'e-product', 'e-orderline', '1:N');
+  });
+</script>
+</body>
+</html>

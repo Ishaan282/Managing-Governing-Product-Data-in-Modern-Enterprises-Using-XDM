@@ -1,0 +1,17 @@
+Warehouse_ID,Warehouse_Name,City,State,Country
+WUS00001,Phoenix Distribution Center,Phoenix,Arizona,United States
+WUS00002,Houston Distribution Center,Houston,Texas,United States
+WUS00003,New York Distribution Center,New York,New York,United States
+WUS00004,Houston Distribution Center,Houstonn,Texas,United States
+WUS00005,Los Angeles Distribution Center,Los Angeles,California,United States
+WUS00006,Chicago Distribution Center,Chicago,Illinois,United States
+WUS00007,Phoenix Distribution Center,Phooenix,Arizona,United States
+WUS00008,San Antonia Distribution Center,San Antonio,Texas,United States
+WUS00009,Dallas Distribution Center,Dallas,Texas,United States
+WUS00010,San Jose Distribution Center,San Jose,California,United States
+WUS00011,Jacksonville  Distribution Center,Jacksonville ,Florida,United States
+WUS00012,San Francisco Distribution Center,San Francisco,California,United States
+WUS00013,Denver Distribution Center,Denver,Colorado,United States
+WUS00014,Charlotte Distribution Center,Charlotte,North Carolina,United States
+WUS00015,Columbus Distribution Center,Columbus,Ohio,United States
+WUS00016,San Diego Distribution Center,San Diego,California,United States
