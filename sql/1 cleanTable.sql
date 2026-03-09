@@ -86,15 +86,18 @@ CREATE TABLE p_cleansedData.warehouse (
 ); 
 
 --! creating bridge tables 
-CREATE TABLE p_cleansedData.supplierToProduct(
-    --doubt
-    Supplier_ID      VARCHAR(126),
-    Product_ID       VARCHAR(126)
+--# product bridge 
+CREATE TABLE p_cleansedData.supplier_product(
+    ID           SERIAL              PRIMARY KEY,
+    Supplier_ID  VARCHAR(126),
+    Product_ID   VARCHAR(126),
+    CONSTRAINT unique_supplier_product UNIQUE (Supplier_ID, Product_ID) --$ for unique pairs 
 );
 
-CREATE TABLE p_cleansedData.CustomerToAddress(
-    --doubt
-    Address_ID      VARCHAR(50)
-    Customer_ID     VARCHAR(50)
+--# customer bridge
+CREATE TABLE p_cleansedData.customer_address(
+    ID           SERIAL              PRIMARY KEY,
+    Address_ID   VARCHAR(50),
+    Customer_ID  VARCHAR(50),
+    CONSTRAINT unique_customer_address UNIQUE (Address_ID, Customer_ID)
 );
-
