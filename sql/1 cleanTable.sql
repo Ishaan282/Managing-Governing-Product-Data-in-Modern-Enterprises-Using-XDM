@@ -1,3 +1,4 @@
+-- Active: 1767956782913@@127.0.0.1@5432@semarchy_data
 --! sql for semarchy_data
 CREATE SCHEMA IF NOT EXISTS p_cleansedData;
 
@@ -86,18 +87,22 @@ CREATE TABLE p_cleansedData.warehouse (
 ); 
 
 --! creating bridge tables 
---# product bridge 
-CREATE TABLE p_cleansedData.supplier_product(
-    ID           SERIAL              PRIMARY KEY,
-    Supplier_ID  VARCHAR(126),
-    Product_ID   VARCHAR(126),
-    CONSTRAINT unique_supplier_product UNIQUE (Supplier_ID, Product_ID) --$ for unique pairs 
+CREATE TABLE p_cleansedData.supplier_product (
+    ID              SERIAL          PRIMARY KEY,
+    Supplier_ID     VARCHAR(126),
+    Supplier_PUB    VARCHAR(30),    -- publisher code for supplier FK
+    Product_ID      VARCHAR(126),
+    Product_PUB     VARCHAR(30)    -- publisher code for product FK
+);
+DROP TABLE p_cleanseddata.supplier_product;
+SELECT * FROM p_cleanseddata.supplier_product ORDER BY product_id;
+
+CREATE TABLE p_cleansedData.customer_address (
+    ID              SERIAL          PRIMARY KEY,
+    Address_ID      VARCHAR(50),
+    Address_PUB     VARCHAR(30),    -- publisher code for address FK
+    Customer_ID     VARCHAR(50),
+    Customer_PUB    VARCHAR(30)    -- publisher code for customer FK
 );
 
---# customer bridge
-CREATE TABLE p_cleansedData.customer_address(
-    ID           SERIAL              PRIMARY KEY,
-    Address_ID   VARCHAR(50),
-    Customer_ID  VARCHAR(50),
-    CONSTRAINT unique_customer_address UNIQUE (Address_ID, Customer_ID)
-);
+DROP TABLE p_cleanseddata.customer_address;

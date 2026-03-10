@@ -94,40 +94,52 @@ SELECT
 FROM p_import.sales_order_line;
 SELECT * FROM p_cleansedData.sales_order_line;
 
--- --# product bridge 
--- INSERT INTO p_cleansedData.supplier_Product (Supplier_ID, Product_ID)
--- SELECT
---     TRIM(Supplier_ID),
---     TRIM(Product_ID)
--- FROM p_import.product;
-
-
--- --# customer bridge
--- INSERT INTO p_cleansedData.Customer_Address (Address_ID,Customer_ID)
--- SELECT
---     TRIM(Address_ID),
---     TRIM(Customer_ID)
--- FROM p_import.customer
--- WHERE Address_ID IS NOT NULL;
-
-
 --! since pair exists 
 --# Insert unique supplier-product pairs
-INSERT INTO p_cleansedData.supplier_product (Supplier_ID, Product_ID)
-SELECT DISTINCT
-    TRIM(Supplier_ID),
-    TRIM(Product_ID)
-FROM p_import.product
-ON CONFLICT (Supplier_ID, Product_ID) DO NOTHING; -- Safety net: skip if pair exists
+-- Insert unique customer-address pairs with accurate publishers
+INSERT INTO p_cleansedData.customer_address 
+    (Address_ID, Address_PUB, Customer_ID, Customer_PUB)
+SELECT DISTINCT 
+    TRIM(c.Address_ID),
+    TRIM(a.Publisher),
+    TRIM(c.Customer_ID),
+    TRIM(c.Publisher)
+FROM p_import.customer c
+LEFT JOIN p_import.address a 
+    ON TRIM(c.Address_ID) = TRIM(a.Address_ID)
+WHERE c.Address_ID IS NOT NULL
+AND NOT EXISTS (
+    SELECT 1
+    FROM p_cleansedData.customer_address ca
+    WHERE ca.Address_ID = TRIM(c.Address_ID)
+      AND ca.Address_PUB = TRIM(a.Publisher)
+      AND ca.Customer_ID = TRIM(c.Customer_ID)
+      AND ca.Customer_PUB = TRIM(c.Publisher)
+);
+
+SELECT * FROM p_cleansedData.customer_address; 
 
 
---# Insert unique customer-address pairs
-INSERT INTO p_cleansedData.customer_address (Address_ID, Customer_ID)
-SELECT DISTINCT
-    TRIM(Address_ID),
-    TRIM(Customer_ID)
-FROM p_import.customer
-WHERE Address_ID IS NOT NULL
-ON CONFLICT (Address_ID, Customer_ID) DO NOTHING;
+-- Insert unique supplier-product pairs with accurate publishers
+INSERT INTO p_cleansedData.supplier_product 
+    (Supplier_ID, Supplier_PUB, Product_ID, Product_PUB)
+SELECT DISTINCT 
+    TRIM(p.Supplier_ID),
+    TRIM(s.Publisher),
+    TRIM(p.Product_ID),
+    TRIM(p.Publisher)
+FROM p_import.product p
+LEFT JOIN p_import.supplier s 
+    ON TRIM(p.Supplier_ID) = TRIM(s.Supplier_ID)
+WHERE p.Supplier_ID IS NOT NULL
+AND NOT EXISTS (
+    SELECT 1
+    FROM p_cleansedData.supplier_product sp
+    WHERE sp.Supplier_ID = TRIM(p.Supplier_ID)
+      AND sp.Supplier_PUB = TRIM(s.Publisher)
+      AND sp.Product_ID = TRIM(p.Product_ID)
+      AND sp.Product_PUB = TRIM(p.Publisher)
+);
 
-SELECT * FROM p_cleansedData.customer_address 
+SELECT * FROM p_cleansedData.supplier_product WHERE supplier_id = 'SUS00005';
+SELECT * FROM p_cleanseddata.supplier ORDER BY supplier_id;
