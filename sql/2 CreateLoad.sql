@@ -13,13 +13,13 @@ BEGIN
 END;
 $$;
 
-
+--! submit load 
 DO $$
 DECLARE
   v_batch_id int;
 BEGIN
   v_batch_id := public.submit_load (
-             133                 /* Load ID from Step 1 */
+             158                 /* Load ID from Step 1 */
             ,'INTEGRATE_ADD'   /* Job name from your image */
             ,'studyauth'           /* User who initialized the load */
   );
@@ -27,11 +27,11 @@ BEGIN
 END;
 $$;
 
--- cancel load 
+--@ cancel load 
 DO $$
 BEGIN
     PERFORM public.cancel_load(
-        132,          -- The Load ID
+        153,          -- The Load ID
         'studyauth'   -- This MUST match the "User" parameter from get_new_loadid
     );
     RAISE NOTICE 'Load has been cancelled.';
