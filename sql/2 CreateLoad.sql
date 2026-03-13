@@ -4,10 +4,10 @@ DECLARE
   v_load_id int;
 BEGIN
   v_load_id := public.get_new_loadid (
-       'case'                /* Data Location name from your list */
+       'case'                /* Data Location name  */
       ,'manual_etl_script'   /* Informational program name */
-      ,'address_load_test'   /* Description of this specific load */
-      ,'studyauth'           /* User initializing the load */
+      ,'address_load_test'   /* description (can be anything) */
+      ,'studyauth'           /* user who started the load */
   );
   RAISE NOTICE 'Your Load ID is: %', v_load_id;
 END;

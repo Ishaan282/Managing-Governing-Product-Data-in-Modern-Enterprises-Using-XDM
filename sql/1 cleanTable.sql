@@ -35,6 +35,7 @@ CREATE TABLE p_cleansedData.inventory (
     Warehouse_ID    VARCHAR(50),
     Quantity        FLOAT
 ); --transaction
+TRUNCATE TABLE p_cleansedData.inventory;
 
 --# product table 
 CREATE TABLE p_cleansedData.product (

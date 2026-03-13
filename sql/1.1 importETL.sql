@@ -64,14 +64,17 @@ FROM p_import.warehouse;
 SELECT * FROM p_cleansedData.warehouse;
 
 --# inventory 
-INSERT INTO p_cleansedData.inventory
-SELECT
-    TRIM(Inventory_ID),
-    TRIM(Product_ID),
-    TRIM(Warehouse_ID),
-    Quantity
-FROM p_import.inventory;
-SELECT * FROM p_cleansedData.inventory;
+
+INSERT INTO p_cleansedData.inventory ( Inventory_ID,Product_ID,Warehouse_ID,Quantity)
+    SELECT
+        MIN(TRIM(Inventory_ID)) AS Inventory_ID, 
+        TRIM(Product_ID)        AS Product_ID,
+        TRIM(Warehouse_ID)      AS Warehouse_ID,
+        SUM(Quantity)           AS Quantity
+    FROM p_import.inventory GROUP BY TRIM(Product_ID),TRIM(Warehouse_ID);
+
+SELECT * FROM p_cleansedData.inventory ORDER BY inventory_id;
+
 
 --# sales order 
 INSERT INTO p_cleansedData.sales_order

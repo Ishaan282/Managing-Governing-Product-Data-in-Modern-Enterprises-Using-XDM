@@ -1,0 +1,1 @@
+bug found that you can't use CREATE inside DO 

@@ -66,8 +66,7 @@ BEGIN
        SELECT
               v_load_id, 'CustomerAddress', ID, Address_ID, Customer_ID , 'CRM', Customer_PUB
        FROM p_cleansedData.customer_address
-       ORDER BY customer_id
-       ;
+       ORDER BY customer_id;
 
        RAISE NOTICE 'All inserts completed successfully for Load ID: %.', v_load_id;
 
