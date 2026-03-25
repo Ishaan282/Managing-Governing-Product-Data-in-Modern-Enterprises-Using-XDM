@@ -96,7 +96,6 @@ CREATE TABLE p_cleansedData.supplier_product (
     Product_PUB     VARCHAR(30)    -- publisher code for product FK
 );
 DROP TABLE p_cleanseddata.supplier_product;
-SELECT * FROM p_cleanseddata.supplier_product ORDER BY product_id;
 
 CREATE TABLE p_cleansedData.customer_address (
     ID              SERIAL          PRIMARY KEY,
