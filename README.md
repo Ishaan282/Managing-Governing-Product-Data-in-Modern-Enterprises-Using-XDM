@@ -31,29 +31,37 @@ Eight CSV files, roughly 10,000 rows each, covering the full order-to-warehouse 
 
 ```
 .
-├── Logistics_Data.zip            # Raw source CSVs
-│   ├── US_Address.csv
-│   ├── US_Customer.csv
-│   ├── US_Inventory.csv
-│   ├── US_Product.csv
-│   ├── US_Sales_Order.csv
-│   ├── US_Sales_Order_Line.csv
-│   ├── US_Supplier.csv
-│   └── US_Warehouse.csv
+├── SourceCode/
+│   ├── Logistics Sample Data/        # Raw source CSVs
+│   │   ├── Logistics Data.zip
+│   │   ├── US_Address.csv
+│   │   ├── US_Customer.csv
+│   │   ├── US_Inventory.csv
+│   │   ├── US_Product.csv
+│   │   ├── US_Sales_Order.csv
+│   │   ├── US_Sales_Order_Line.csv
+│   │   ├── US_Supplier.csv
+│   │   └── US_Warehouse.csv
+│   │
+│   ├── analysis/
+│   │   ├── analysis.ipynb            # Full EDA — schema inspection, FK checks, column profiling
+│   │   ├── an1.ipynb                 # PK uniqueness and duplicate analysis
+│   │   └── dataFixing.ipynb          # Inventory ID reformatting fix
+│   │
+│   ├── ETL/
+│   │   ├── 0 importRaw.sql           # Stage 0 — Create p_import schema & tables
+│   │   ├── 1 cleanTable.sql          # Stage 1 — Create p_cleansedData schema & bridge tables
+│   │   ├── 1.1 importETL.sql         # Stage 1.1 — ETL: trim, normalize, deduplicate into cleansed schema
+│   │   ├── 2 CreateLoad.sql          # Stage 2 — Create a Semarchy load batch
+│   │   ├── 2.1 insertLoad.sql        # Stage 2.1 — Insert cleansed data into Semarchy SD/SA tables
+│   │   ├── 3 dashboard.sql           # Stage 3 — Refresh casestudy.inventory for dashboards
+│   │   └── log.sql                   # Archived early load attempt (reference only)
+│   │
+│   ├── CaseStudy [1.0].xml           # Semarchy MDM model definition
+│   └── Model_History/                # Versioned model exports
 │
-├── analysis/
-│   ├── analysis.ipynb            # Full EDA — schema inspection, FK checks, column profiling
-│   ├── an1.ipynb                 # PK uniqueness and duplicate analysis
-│   └── dataFixing.ipynb          # Inventory ID reformatting fix
-│
-└── sql/
-    ├── 0_importRaw.sql           # Stage 0 — Create p_import schema & tables
-    ├── 1_cleanTable.sql          # Stage 1 — Create p_cleansedData schema & bridge tables
-    ├── 1_1_importETL.sql         # Stage 1.1 — ETL: trim, normalize, deduplicate into cleansed schema
-    ├── 2_CreateLoad.sql          # Stage 2 — Create a Semarchy load batch
-    ├── 2_1_insertLoad.sql        # Stage 2.1 — Insert cleansed data into Semarchy SD/SA tables
-    ├── 3_dashboard.sql           # Stage 3 — Refresh casestudy.inventory for dashboards
-    └── log.sql                   # Archived early load attempt (reference only)
+├── Report & PPT/                     # Project report, slides, and screenshots
+└── IPR Submission Proof/             # Submission documentation
 ```
 
 ---
@@ -66,12 +74,12 @@ Data flows through four stages. Each stage has its own SQL script so you can run
 Raw CSVs
    │
    ▼
-[0_importRaw.sql]
+[0 importRaw.sql]
 p_import schema
 (raw staging tables)
    │
    ▼
-[1_cleanTable.sql + 1_1_importETL.sql]
+[1 cleanTable.sql + 1.1 importETL.sql]
 p_cleansedData schema
 - TRIM whitespace
 - INITCAP country names
@@ -80,14 +88,14 @@ p_cleansedData schema
 - Build bridge tables: supplier_product, customer_address
    │
    ▼
-[2_CreateLoad.sql + 2_1_insertLoad.sql]
+[2 CreateLoad.sql + 2.1 insertLoad.sql]
 Semarchy xDM (semarchy_db)
 - SD_ tables: fuzzy/dedup entities (Address, Customer, Product, Supplier, Warehouse)
 - SA_ tables: bridge relationships (SupplierProduct, CustomerAddress)
 - MDM matching & survivorship runs automatically
    │
    ▼
-[3_dashboard.sql]
+[3 dashboard.sql]
 casestudy.inventory
 (Golden record inventory, dashboard-ready)
 ```
@@ -110,19 +118,19 @@ casestudy.inventory
 
 ### Step 1 — Stage the Raw Data
 
-Run `0_importRaw.sql` against `semarchy_data`. It creates the `p_import` schema and all eight staging tables.
+Run `0 importRaw.sql` against `semarchy_data`. It creates the `p_import` schema and all eight staging tables.
 
 Then load the CSVs in — pgAdmin, DBeaver, or plain psql all work:
 
 ```sql
-\COPY p_import.address FROM 'US_Address.csv' CSV HEADER;
-\COPY p_import.customer FROM 'US_Customer.csv' CSV HEADER;
+\COPY p_import.address FROM 'SourceCode/Logistics Sample Data/US_Address.csv' CSV HEADER;
+\COPY p_import.customer FROM 'SourceCode/Logistics Sample Data/US_Customer.csv' CSV HEADER;
 -- repeat for the remaining 6 tables
 ```
 
 ### Step 2 — Cleanse and Deduplicate
 
-Run `1_cleanTable.sql` first (creates `p_cleansedData` schema), then `1_1_importETL.sql` to move and transform the data. Here's what it does:
+Run `1 cleanTable.sql` first (creates `p_cleansedData` schema), then `1.1 importETL.sql` to move and transform the data. Here's what it does:
 
 - Trims leading/trailing whitespace from every string field
 - Title-cases country names with `INITCAP` so "united states" and "United States" don't end up as separate values
@@ -135,7 +143,7 @@ The raw `Inventory_ID` field doesn't follow a consistent format. If you hit issu
 
 ### Step 4 — Load into Semarchy MDM
 
-Run `2_CreateLoad.sql` against `semarchy_db` to get a Load ID, then `2_1_insertLoad.sql` to push all cleansed records into Semarchy's staging layer. Semarchy takes it from there — matching, merging, and producing golden records automatically.
+Run `2 CreateLoad.sql` against `semarchy_db` to get a Load ID, then `2.1 insertLoad.sql` to push all cleansed records into Semarchy's staging layer. Semarchy takes it from there — matching, merging, and producing golden records automatically.
 
 ```sql
 -- Get a load ID first
@@ -147,7 +155,7 @@ SELECT public.submit_load(<your_load_id>, 'INTEGRATE_ADD', 'studyauth');
 
 ### Step 5 — Refresh the Dashboard Inventory
 
-Run `3_dashboard.sql` against `semarchy_db`. It wipes and repopulates `casestudy.inventory` by joining cleansed inventory records with the golden product IDs from `md_product` — ready for any BI tool to query directly.
+Run `3 dashboard.sql` against `semarchy_db`. It wipes and repopulates `casestudy.inventory` by joining cleansed inventory records with the golden product IDs from `md_product` — ready for any BI tool to query directly.
 
 ```sql
 TRUNCATE TABLE casestudy.inventory;
@@ -191,13 +199,13 @@ Before writing a single line of ETL, the notebooks were used to understand what 
 ## Screenshots
 
 **Golden Records — Product Master View**
-![Golden Records Product View](image__3_.png)
+![Golden Records Product View](./Report%20&%20PPT/imgs/Golden_data.png)
 
 **Entity Relationship Diagram — MDM Model**
-![MDM Entity Relationship Diagram](imagehjk.png)
+![MDM Entity Relationship Diagram](./Report%20&%20PPT/imgs/ERdiagram.png)
 
 **Staged Records — Product Source Data**
-![Staged Product Source Data](Screenshot_2026-05-18_at_11_55_20.png)
+![Staged Product Source Data](./Report%20&%20PPT/imgs/md.png)
 
 ---
 
